@@ -1,0 +1,709 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+# Introduction
+
+## Project Overview
+
+
+This project is developed in order to obtain the harvardX professional certification title.
+
+The main idea of the project is to have a Cancer dataset, which has 32 characteristics and the idea is to be able to train each of the algorithms seen in classes to be able to predict the type of cancer Benign (B), Malignant (M).
+
+Despite the fact that the code is very easy to visualize and understand, each of the developed pazos will be explained.
+The code has been divided into the following parts:
+1. Project initialization
+2. Dataset exploration1
+3. Building machine learning algorithms
+4. Overview of results
+
+## Project initialization
+
+The data set used is hosted at the address such, which has 32 characteristics to take into account of which the first characteristic is not significant since it is used simply with an index; The second characteristic is diagnostic and it is the characteristic that will be used in the output, that is, for training. For the training two classes Benigno (B) and Maligno (M) will be taken into account, classes that are located in the Diagnosis column.
+
+The columns of the data are listed below:
+1- id 
+2- diagnosis 
+3- radius_mean 
+4- texture_mean 
+5- perimeter_mean 
+6- area_mean 
+7- smoothness_mean 
+8- compactness_mean  
+9- concavity_mean 
+10- concave.points_mean 
+11- symmetry_mean 
+12- fractal_dimension_mean 
+13- radius_se 
+14- texture_se 
+15- perimeter_se 
+16- area_se
+17- smoothness_se 
+18- compactness_se 
+19- concavity_se 
+20- concave.points_se 
+21- symmetry_se 
+22- fractal_dimension_se 
+23- radius_worst
+24- texture_worst 
+25- perimeter_worst 
+26- area_worst 
+27- smoothness_worst 
+28- compactness_worst 
+29- concavity_worst 
+30- concave.points_worst
+31- symmetry_worst 
+32- fractal_dimension_worst
+
+
+This dataset has 569 observations.
+
+The objective of this work is to predict the type of cancer that a person has according to its characteristics.
+
+Part 1 - Project initialization
+Install libraries
+
+```{r,echo=FALSE}
+# Installing libraries
+if(!require(tidyverse)) 
+  install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) 
+  install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) 
+  install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(ranger)) 
+  install.packages("ranger", repos = "http://cran.us.r-project.org")
+if(!require(naivebayes)) 
+  install.packages("naivebayes", repos = "http://cran.us.r-project.org")
+if(!require(kernlab)) 
+  install.packages("kernlab", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) 
+  install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(knitr)) 
+  install.packages("knitr", repos = "http://cran.us.r-project.org")
+if(!require(e1071)) 
+  install.packages("e1071", repos = "http://cran.us.r-project.org")
+
+# Dataset
+url1 <- 'https://raw.githubusercontent.com/gmineo/Breast-Cancer-Prediction-Project/master/'
+url2 <- 'data.csv'
+url_data <- (paste(url1,url2,sep=""))
+rm(url1,url2)
+df <- read.csv(url_data) %>% select(-X)
+# Split data into train (75%) and test sets (25%)
+set.seed(1)
+```
+
+```{r,echo=FALSE}
+test_index <- createDataPartition(y = df$diagnosis, times = 1, p = 0.25, list = FALSE)
+
+train <- df[-test_index,]
+test <- df[test_index,]
+
+```
+
+
+Now that the dataset is loaded, we proceed to analyze the information.
+
+# Methods and data analysis
+
+
+This project will use the following algorithms:
+
+1. Generalized Linear Model (method = "glm")
+2. k-Nearest Neighbors (method = "knn")
+3. Random Forest (method = "ranger", additional library "ranger")
+4. Naive Bayes (method = "naive_bayes", additional library "naivebayes")
+5. Support Vector Machines with Polynomial Kernel (method = "svmPoly", additional library "kernlab")
+
+
+At the end we will give the score of each of the algorithms to identify which one behaves best.
+
+## Overview of the dataset
+
+
+
+```{r,echo=FALSE}
+
+head(train)
+
+```
+
+Summary of our dataset.
+
+```{r,echo=FALSE}
+
+summary(train)
+
+```
+
+
+This dataset from this library is clean and we do not need to pre-process to perform our analysis. Next we will begin to explore some variables of our dataset, to observe the behavior of each one of the variables:
+
+Radius mean by classes chart
+
+```{r,echo=FALSE}
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,3])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Radius mean incidence') +
+  ggtitle('Radius mean by classes') +
+  theme_economist()
+
+```
+
+Texture mean by classes chart 
+
+```{r,echo=FALSE}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,4])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Texture mean') +
+  ggtitle('Texture mean by classes') +
+  theme_economist()
+
+```
+
+Perimeter mean by classes chart
+
+```{r CHART_3}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,5])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Perimeter mean') +
+  ggtitle('Perimeter mean by classes') +
+  theme_economist()
+
+
+```
+
+Area mean by classes chart
+
+```{r CHART_4}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,6])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Area mean') +
+  ggtitle('Area mean by classes') +
+  theme_economist()
+
+
+```
+
+smoothness mean by classes chart
+
+```{r CHART_5}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,7])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('smoothness mean') +
+  ggtitle('smoothness mean by classes') +
+  theme_economist()
+
+```
+
+Compactness mean by classes chart
+
+```{r CHART_6}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,8])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Compactness mean') +
+  ggtitle('Compactness mean by classes') +
+  theme_economist()
+```
+
+Concavity mean by classes chart
+
+```{r CHART7}
+
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,9])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Concavity mean') +
+  ggtitle('Concavity by classes') +
+  theme_economist()
+```
+
+Concave points by classes chart
+
+```{r CHART_8}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,10])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Concave points') +
+  ggtitle('Concave points by classes') +
+  theme_economist()
+```
+
+Symmetry means by classes chart
+
+```{r CHART_9}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,11])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Symmetry means') +
+  ggtitle('Symmetry means by classes') +
+  theme_economist()
+```
+
+Fractal dimension means by classes chart
+
+```{r CHART_10}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,12])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Fractal dimension means') +
+  ggtitle('Fractal dimension means by classes') +
+  theme_economist()
+```
+
+Radius SE by classes chart
+
+```{r CHART_11}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,13])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Radius SE') +
+  ggtitle('Radius SE by classes') +
+  theme_economist()
+```
+
+Texture SE by classes chart
+
+```{r CHART_12}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,14])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Texture SE') +
+  ggtitle('Texture SE by classes') +
+  theme_economist()
+```
+
+Perimeter SE by classes chart
+
+```{r CHART_13}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,15])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Perimeter SE') +
+  ggtitle('Perimeter SE by classes') +
+  theme_economist()
+```
+
+Area SE by classes chart
+
+```{r CHART_14}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,16])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Area SE') +
+  ggtitle('Area SE by classes') +
+  theme_economist()
+```
+
+Smooth SE by classes chart
+
+```{r CHART_15}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,17])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Smooth SE') +
+  ggtitle('Smooth SE by classes') +
+  theme_economist()
+```
+
+Compactness SE by classes chart
+```{r CHART_16}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,18])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('compactness SE') +
+  ggtitle('compactness SE by classes') +
+  theme_economist()
+```
+
+Perimeter worst by classes chart
+```{r CHART_23}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,25])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Perimeter worst') +
+  ggtitle('Perimeter worst by classes') +
+  theme_economist()
+```
+
+Radius worst by classes chart
+```{r CHART_24}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,23])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Radius worst') +
+  ggtitle('Radius worst by classes') +
+  theme_economist()
+```
+
+Area worst by classes chart
+```{r CHART_25}
+
+train %>% 
+  ggplot(aes(x=diagnosis, y=train[,26])) + 
+  geom_boxplot(outlier.colour="red", 
+               outlier.shape=1,
+               outlier.size=1) +
+  xlab('Class') +
+  ylab('Area worst') +
+  ggtitle('Area worst by classes') +
+  theme_economist()
+```
+
+Based on the graphs, we see that perimeter_worst and radius_worst have good presentations.
+
+Correlation table for our predictors:
+
+```{r P_10_S2}
+
+Cor_Tab <- cor(train[,3:32])
+
+formatC(Cor_Tab, digits = 2, format = 'f', big.mark = ',') %>% knitr::kable()
+
+```
+
+From the table, we can see that some numbers seem to be highly correlated. 
+
+
+## Defining arguments
+
+Before we start, we have to define the parameters that are going to be passed into our functions (x and y for both train and test subsets).
+
+```{r P11_S2}
+
+# define train and test sets
+
+Train_prediction <- as.matrix(train[,3:32]) #Train_Predictors
+Train_class <- train$diagnosis #Train_Class
+Test_prediction <- as.matrix(test[,3:32]) #Test_Predictors
+Test_class <- test$diagnosis #Test_Class
+
+CrlF <- trainControl(method="cv",          #Control the computational nuances of thetrainfunction
+                           number = 15,    #Either the number of folds or number of resampling iterations
+                           classProbs = TRUE,
+                           summaryFunction = twoClassSummary)
+
+```
+
+## Generalized Linear Model (GLM)
+
+
+From a mathematical perspective, the basis of much of the evidence statistics found in the Model Linear (ML) general or classic. Its importance lies in its structure, we suppose, it reflects the explanatory elements of a phenomenon through relationships probabilistic functions between variables. The Generalized Linear Model (MLG), which we deal with in this work, is the natural extension of the Model Linear classic.
+
+# Alg 1 - Generalized Linear Model
+
+```{r P_12_S2, warning = FALSE}
+
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+
+train_glm <- train(x = Train_prediction, y = Train_class, method = "glm",
+                   metric = "ROC",
+                   preProcess = c("scale", "center"),  # in order to normalize the data
+                   trControl= CrlF)
+
+y_hat_glm <- predict(train_glm, Test_prediction)
+
+m1acc <- confusionMatrix(y_hat_glm, Test_class)$overall['Accuracy']
+
+cat('Model accuracy is equal to ', 
+    formatC(m1acc, digits = 5, format = 'f', big.mark = ','), '. ',  
+    'Below is the confusion matrix:', sep = "")
+
+confusionMatrix(y_hat_glm, Test_class)$table
+
+```
+
+Let's move to other algorithms to see if we can improve accuracy.
+
+## k-Nearest Neighbors (KNN)
+
+K-Nearest-Neighbor is an instance-based algorithm of supervised type of Machine Learning. It can vary to classify new samples (discrete values) or to predict (regression, continuous values). Being a simple method, it is ideal to enter the world of Machine Learning. It is basically used to classify values by searching for the "most similar" data points (by proximity) learned in the training stage and making guesses of new points based on that classification.
+
+```{r P13_S2, warning = FALSE}
+
+
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+
+train_knn <- train(x = Train_prediction, y = Train_class, method="knn",
+                   metric="ROC",
+                   preProcess = c('center', 'scale'),
+                   tuneLength=10, #The tuneLength parameter tells the algorithm to try different default values for the main parameter
+                   #In this case we used 10 default values
+                   trControl=CrlF)
+
+y_hat_knn <- predict(train_knn, Test_prediction)
+
+m2acc <- confusionMatrix(y_hat_knn, Test_class)$overall['Accuracy']
+
+cat('Model accuracy is equal to ', 
+    formatC(m2acc, digits = 5, format = 'f', big.mark = ','), '. ',  
+    'Below is the confusion matrix:', sep = "")
+
+confusionMatrix(y_hat_knn, Test_class)$table
+
+# Shows optimal k from finalModel. 
+cat('Optimal k is ', 
+    formatC(train_knn$finalModel$k, digits = 0, 
+            format = 'f', big.mark = ','), 
+    sep = "")
+
+
+```
+
+## Random Forest (RF)
+
+Random Forest Regression is a supervised classification algorithm. As its name suggests, this algorithm creates the forest with multiple trees. In general, the more trees there are in the forest, the more robust the forest will be. Similarly, in the random forest classifier, the greater the number of trees in the forest, the greater the precision.
+
+Once each decision tree has been calculated, the results of each of them are averaged and with this the prediction of the problem is obtained. The advantages of this algorithm are the following:
+
+- It can solve both types of problems, that is, classification and regression, and it makes a decent estimate on both fronts.
+- One of the most striking benefits is the power to handle large amounts of data with higher dimensionality. 
+- It can handle thousands of input variables and identify the most significant variables, making it considered one of the dimensionality reduction methods. 
+- Furthermore, the model shows the importance of the variable, which can be a very useful feature.
+- It has an effective method of estimating missing data and maintains accuracy when a large proportion of the data is missing.
+
+```{r P_14_S2, warning = FALSE}
+
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+
+# Setting tuning parameters for the train function
+grid <- expand.grid(mtry=seq(1, 5, 1), 
+                    splitrule = c("extratrees", "gini"), 
+                    min.node.size = seq(1, 50, 10))
+
+train_rf <- train(x = Train_prediction, y = Train_class, method="nnet",
+                  metric="ROC",
+                  preProcess=c('center', 'scale', 'pca'),
+                  tuneLength=10,
+                  trace=FALSE,
+                  trControl=CrlF)
+
+y_hat_rf <- predict(train_rf, Test_prediction)
+
+m3acc <- confusionMatrix(y_hat_rf, Test_class)$overall['Accuracy']
+
+cat('Model accuracy is equal to ', 
+    formatC(m3acc, digits = 5, format = 'f', big.mark = ','), '. ',  
+    'Below is the confusion matrix:', sep = "")
+
+confusionMatrix(y_hat_rf, Test_class)$table
+
+```
+
+## Naive Bayes (NB)
+
+Naive Bayes models are a special class of Automatic Learning, or Machine Learning, classification algorithms, as we will refer from now on. They are based on a statistical classification technique called "Bayes' theorem".
+These models are called “Naive” algorithms, or “Innocents” in Spanish. They assume that the predictor variables are independent of each other. In other words, that the presence of a certain characteristic in a data set is not related at all to the presence of any other characteristic.
+They provide an easy way to build models with very good behavior due to their simplicity.
+
+```{r P_15_S2 , warning = FALSE}
+
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+
+# Setting train control argument for the train function
+control <- trainControl(method = "cv", number = 10, p = .9)
+
+train_nb <- train(x = Train_prediction, y = Train_class, method="nb",
+                  metric="ROC",
+                  preProcess=c('center', 'scale'), #in order to normalize de data
+                  trace=FALSE,
+                  trControl=CrlF) 
+
+y_hat_nb <- predict(train_nb, Test_prediction)
+
+m4acc <- confusionMatrix(y_hat_nb, Test_class)$overall['Accuracy']
+
+cat('Model accuracy is equal to ', 
+    formatC(m4acc, digits = 5, format = 'f', big.mark = ','), '. ',  
+    'Below is the confusion matrix:', sep = "")
+
+confusionMatrix(y_hat_nb, Test_class)$table
+
+```
+
+## Support Vector Machines with Polynomial Kernel (SVM)
+
+They are also known by the acronym SVM for its acronym in English (Support Vector Machines). They can be used for both regression and classification.
+
+Conceptually, SVMs are easier to explain for classification problems.
+
+The techniques of Vector Support Machine (SVM) for some strange reason is one of the algorithms that arouse the most interest and above all the one that I think generates the most over estimation. It is possible that I have not used enough the family of algorithms to recognize so much their value.
+
+Not more than a year ago, a friend in a proposal suggested using this family of algorithms without checking whether it was really convenient to use them for the type of data that would be analyzed. This friend's justification was that SVM were the "best" algorithms, which is false, you cannot rate a family of algorithms as the best, you need to test several against the data to determine which ones work best with them. 
+
+```{r P_16_S2, warning = FALSE}
+
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+
+train_svm <- train(x = Train_prediction, y = Train_class, method = "svmPoly")
+
+y_hat_svm <- predict(train_svm, Test_prediction)
+
+m5acc <- confusionMatrix(y_hat_svm, Test_class)$overall['Accuracy']
+
+cat('Model accuracy is equal to ', 
+    formatC(m5acc, digits = 5, format = 'f', big.mark = ','), '. ',  
+    'Below is the confusion matrix:', sep = "")
+
+confusionMatrix(y_hat_svm, Test_class)$table
+
+```
+
+# Results
+
+Below we show the results
+
+```{r P_17_S3, warning = FALSE, message=FALSE}
+
+models <- c('1. Generalized Linear Model', 
+            '2. k-Nearest Neighbors', 
+            '3. Random Forest', 
+            '4. Naive Bayes', 
+            '5. Support Vector Machines with Polynomial Kernel')
+
+acc_values <- formatC(c(m1acc, m2acc, m3acc, m4acc, m5acc), digits = 5, big.mark=",")
+
+acc_table  <- data.frame(Accuracy = acc_values, row.names = models)
+
+acc_table %>% knitr::kable()
+
+```
+
+
+Now we see which variables are better correlated with the output.
+
+```{r P18_S3_TopImpact_KNN}
+
+plot(varImp(train_knn), top=30, main="Top predictors - KNN")
+
+```
+
+Perimeter_worst is the variable with the highest correlation at the output
+
+# Conclusion
+
+We analyzed the characteristics of cancer from a set of patient data available on github. We review the key predictors and then start building ML models.
+
+The methods used for this analysis were:
+
+1. Generalized linear model
+2. Nearest K-Neighbors
+3. Random Forest
+4. Naive Bayes
+5. Support of vector machines with polynomial nucleus
+
+Models were tested in a test set. All models have good, relatively high precision.
+
+We may consider increasing the size of the dataset to improve our results. And use other methods or combination of each other to improve our models. 
+
+# Sources
+
+Referenced websites:
+
+1. https://raw.githubusercontent.com/gmineo/Breast-Cancer-Prediction-Project/master/
+
+2. https://www.sciencedirect.com/topics/nursing-and-health-professions/pelvic-incidence 
+
+3. https://www.orthobullets.com/spine/2038/adult-isthmic-spondylolisthesis
+
+4. https://en.wikipedia.org/wiki/Pelvic_tilt
+
+5. https://datasetsearch.research.google.com/search?query=cancer%20dataset&docid=lqkM7t0bmGplzzTuAAAAAA%3D%3D
+
+7. https://pdfs.semanticscholar.org/306d/2c889f7783e1b2944c9c684fc7342c77d206.pdf
+
+8. https://datasetsearch.research.google.com/search?query=cancer%20dataset&docid=Fj%2BIDVyi5Wdm3sS7AAAAAA%3D%3D
+
+Other sources used:
+
+1. Introduction to Data Science - Data Analysis and Prediction Algorithms with R by Rafael A. Irizarry (https://rafalab.github.io/dsbook/)
+
+2. Caret library (https://topepo.github.io/caret/)
+
+3. towards data science (https://towardsdatascience.com)
